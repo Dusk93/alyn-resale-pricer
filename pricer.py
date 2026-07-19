@@ -7,10 +7,13 @@ def get_comparables(analysis: str):
         return pd.DataFrame([{"title": "Similar Item", "price": 45}])
 
 def generate_price_estimate(analysis: str, comps_df: pd.DataFrame):
-    prompt = f"Item: {analysis}\nComparables: {comps_df.to_string()}\nGive price range and tips."
+    prompt = f"Item Analysis: {analysis}\n\nComparables:\n{comps_df.to_string()}\nGive realistic price range and tips."
     response = ollama.generate(model='llama3.2', prompt=prompt)
+    text = response['response']
     return {
-        "reasoning": response['response'],
-        "low": 40, "median": 65, "high": 90,
+        "reasoning": text,
+        "low": 40,
+        "median": 65,
+        "high": 90,
         "confidence": "Medium"
     }
