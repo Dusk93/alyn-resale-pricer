@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-# Install required system dependencies including zstd
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     zstd \
@@ -15,13 +15,12 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Pre-download small models (critical for free tier)
-RUN ollama pull moondream
-RUN ollama pull llama3.2
+# Start Ollama server in background + pull models
+RUN ollama serve & sleep 8 && \
+    ollama pull moondream && \
+    ollama pull llama3.2 && \
+    pkill ollama
 
 COPY . .
-
-# Environment variables for Telegram bot
-ENV TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
 
 CMD ["python", "bot.py"]
