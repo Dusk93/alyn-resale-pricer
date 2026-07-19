@@ -11,5 +11,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Start Ollama + Bot with proper keep-alive
-CMD ollama serve & sleep 10 && python bot.py
+# Use a very reliable small model
+CMD ollama serve & sleep 10 && ollama pull llava:7b && python bot.py
