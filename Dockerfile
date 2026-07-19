@@ -1,12 +1,7 @@
 FROM python:3.11-slim
 
-# Install dependencies
-RUN apt-get update && apt-get install -y \
-    curl \
-    zstd \
-    ca-certificates \
-    procps \
-    && rm -rf /var/lib/apt/lists/* && \
+RUN apt-get update && apt-get install -y curl zstd ca-certificates procps && \
+    rm -rf /var/lib/apt/lists/* && \
     curl -fsSL https://ollama.com/install.sh | sh
 
 WORKDIR /app
@@ -16,5 +11,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Start Ollama server in background + bot
-CMD ollama serve & sleep 8 && python bot.py
+# Start Ollama + Bot with proper keep-alive
+CMD ollama serve & sleep 10 && python bot.py
