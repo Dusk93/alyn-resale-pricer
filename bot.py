@@ -4,6 +4,27 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 
 from analyzer import analyze_item
 from pricer import get_comparables, generate_price_estimate
+import os
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import socketserver
+
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is running")
+
+def run_dummy_server():
+    port = int(os.getenv("PORT", 8080))
+    with socketserver.TCPServer(("", port), Handler) as httpd:
+        print(f"✅ Dummy health server listening on port {port}")
+        httpd.serve_forever()
+
+# Start it in background
+if __name__ == "__main__":
+    threading.Thread(target=run_dummy_server, daemon=True).start()
+    # ... rest of your bot code
 
 logging.basicConfig(level=logging.INFO)
 
