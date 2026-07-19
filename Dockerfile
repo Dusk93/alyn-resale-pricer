@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     zstd \
     ca-certificates \
+    procps \               # Needed for pkill
     && rm -rf /var/lib/apt/lists/*
 
 # Install Ollama
@@ -15,11 +16,10 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Start Ollama server in background + pull models
-RUN ollama serve & sleep 8 && \
+# Start Ollama + pull small model only (moondream is much smaller)
+RUN ollama serve & sleep 10 && \
     ollama pull moondream && \
-    ollama pull llama3.2 && \
-    pkill ollama
+    pkill ollama || true
 
 COPY . .
 
