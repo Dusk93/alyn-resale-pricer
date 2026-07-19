@@ -1,37 +1,35 @@
-import logging, os
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-
-from analyzer import analyze_item
-from pricer import get_comparables, generate_price_estimate
+import logging
 import os
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import socketserver
 
+from telegram import Update
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+
+from analyzer import analyze_item
+from pricer import get_comparables, generate_price_estimate
+
+logging.basicConfig(level=logging.INFO)
+
+TOKEN = os.getenv("TELEGRAM_TOKEN")
+
+# ================== DUMMY SERVER FOR RENDER ==================
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(b"Bot is running")
+        self.wfile.write(b"Bot is running OK")
 
 def run_dummy_server():
     port = int(os.getenv("PORT", 8080))
     with socketserver.TCPServer(("", port), Handler) as httpd:
-        print(f"✅ Dummy health server listening on port {port}")
+        print(f"✅ Dummy health server running on port {port}")
         httpd.serve_forever()
 
-# Start it in background
-if __name__ == "__main__":
-    threading.Thread(target=run_dummy_server, daemon=True).start()
-    # ... rest of your bot code
-
-logging.basicConfig(level=logging.INFO)
-
-TOKEN = os.getenv("TELEGRAM_TOKEN")   # Will come from Render env vars
-
+# ================== BOT LOGIC ==================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🛍️ Send me a photo of any item for AI resale pricing!")
+    await update.message.reply_text("🛍️ **AI Resale Pricer Bot**\n\nSend a photo of any item to get a price estimate!")
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
@@ -49,24 +47,31 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         est = generate_price_estimate(analysis, df)
 
         reply = f"""
-🔍 **Analysis**: {analysis[:600]}...
+🔍 **Analysis**
+{analysis[:700]}...
 
-💰 **Price**: **${est['median']}** (${est['low']}-${est['high']})
+💰 **Price Estimate**
+**${est['median']}** (${est['low']}-${est['high']})
 Confidence: {est['confidence']}
 
-{est['reasoning'][:700]}
+📝 **Tips**: {est['reasoning'][:700]}
 """
         await message.reply_text(reply, parse_mode='Markdown')
     except Exception as e:
-        await message.reply_text(f"Error: {str(e)}")
+        await message.reply_text(f"❌ Error: {str(e)}")
     finally:
         if os.path.exists(file_path):
             os.remove(file_path)
 
 def main():
+    # Start dummy server for Render
+    threading.Thread(target=run_dummy_server, daemon=True).start()
+
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+
+    print("🤖 Telegram Bot Started")
     app.run_polling()
 
 if __name__ == "__main__":
